@@ -22,6 +22,7 @@ interface IFluffySaleEscrow {
     error FluffyNFTAlreadyMinted();
     error TransferFailed();
     error FluffyNFTNotYetMinted();
+    error CanOnlyBuyOnce();
 
 
     event OfferCreated(address indexed seller, uint256 price);
@@ -37,4 +38,5 @@ interface IFluffySaleEscrow {
     function completeSale(address offerId) external;
     function setFluffyNFT(address _fluffyNFT) external;
     function getOffer(address offerId) external view returns (Offer memory);
+    function isBuying(address buyer) external view returns (bool);
 }

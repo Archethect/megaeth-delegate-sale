@@ -20,7 +20,8 @@
   verbosity = 4
 
 [etherscan]
-  mainnet = { key = "${API_KEY_ETHERSCAN}" }
+  mainnet ={ key = "${API_KEY_ETHERSCAN}" }
+  sepolia = { key = "${ETHERSCAN_API_KEY}" }
 
 [fmt]
   bracket_spacing = true
@@ -33,13 +34,4 @@
   wrap_comments = true
 
 [rpc_endpoints]
-  arbitrum = "https://arbitrum-one-rpc.publicnode.com"
-  avalanche = "https://avalanche-c-chain-rpc.publicnode.com"
-  base = "https://mainnet.base.org"
-  bnb_smart_chain = "https://bsc-dataseed.binance.org"
-  gnosis_chain = "https://rpc.gnosischain.com"
-  localhost = "http://localhost:8545"
-  mainnet = "https://eth-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
-  optimism = "https://optimism-rpc.publicnode.com"
-  polygon = "https://polygon-bor-rpc.publicnode.com"
-  sepolia = "https://ethereum-sepolia-rpc.publicnode.com"
+  sepolia = "${SEPOLIA_RPC}"

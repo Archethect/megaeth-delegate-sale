@@ -8,13 +8,13 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 contract FluffySaleEscrow is AccessControl, IFluffySaleEscrow {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     uint256 public constant BPS = 10000;
-    uint256 public constant REVERT_LOCK_TIMESTAMP = 1739275200; // Tue Feb 11 2025, 12 PM UTC (1 hour before mint launch)
 
     uint256 public feePercentageInBPS;
     address public feeReceiver;
     IERC721 public fluffyNFT;
 
     mapping(address => Offer) public offers;
+    mapping(address => bool) public isBuying;
 
     constructor(address _admin, address _feeReceiver) {
         if(_admin == address(0)) revert InvalidAddress();
@@ -39,31 +39,35 @@ contract FluffySaleEscrow is AccessControl, IFluffySaleEscrow {
     }
 
     function revertOffer() external {
-        Offer storage offer = offers[msg.sender];
+        Offer memory offer = offers[msg.sender];
         if(offer.seller != msg.sender) revert NotOwner();
         if(offer.success) revert OfferAlreadyCompleted();
+        delete offers[msg.sender];
         if(offer.buyer != address(0)) {
+            isBuying[offer.buyer] = false;
             payable(offer.buyer).transfer(offer.price);
         }
-        delete offers[msg.sender];
         emit OfferReverted(msg.sender);
     }
 
     function buy(address offerId) external payable {
         Offer storage offer = offers[offerId];
+        if(isBuying[msg.sender]) revert CanOnlyBuyOnce();
         if(offer.seller == address(0)) revert NonExistingOffer();
         if(offer.buyer != address(0)) revert OfferAlreadyFilled();
         if(msg.value != offer.price) revert IncorrectPayment();
         offer.buyer = msg.sender;
+        isBuying[msg.sender] = true;
         emit Bought(offerId, msg.sender);
     }
 
     function revertBuy(address offerId) external {
-        if(REVERT_LOCK_TIMESTAMP < block.timestamp && address(fluffyNFT) == address(0)) revert FluffyNFTNotSet();
+        if(address(fluffyNFT) == address(0)) revert FluffyNFTNotSet();
         Offer storage offer = offers[offerId];
         if(offer.buyer != msg.sender) revert NotBuyer();
         if(offer.success) revert OfferAlreadyCompleted();
         if(IERC721(fluffyNFT).balanceOf(offer.buyer) > 0) revert FluffyNFTAlreadyMinted();
+        isBuying[offer.buyer] = false;
         offer.buyer = address(0);
         (bool success,) = payable(offer.buyer).call{value: offer.price}("");
         if(!success) revert TransferFailed();
