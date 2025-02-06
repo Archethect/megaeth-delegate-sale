@@ -3,7 +3,7 @@ pragma solidity >=0.8.28;
 
 /**
  * @title IFluffySaleEscrow
- * @Author Archethect
+ * @author Archethect
  * @notice Interface for the FluffySaleEscrow contract
  */
 interface IFluffySaleEscrow {

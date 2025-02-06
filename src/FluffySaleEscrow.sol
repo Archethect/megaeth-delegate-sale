@@ -6,7 +6,7 @@ import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /// @title FluffySaleEscrow
-/// @Author Archethect
+/// @author Archethect
 /// @notice Escrow contract handling the creation, purchase, and finalization of Fluffy NFT whitelist sale offers
 contract FluffySaleEscrow is AccessControl, IFluffySaleEscrow {
     /// @notice Role identifier for admin-only functions
@@ -71,6 +71,10 @@ contract FluffySaleEscrow is AccessControl, IFluffySaleEscrow {
         if(offer.success) revert OfferAlreadyCompleted();
         delete offers[msg.sender];
         if(offer.buyer != address(0)) {
+            if(
+                address(fluffyNFT) != address(0) &&
+                IERC721(fluffyNFT).balanceOf(offer.buyer) > 0
+            ) revert FluffyNFTAlreadyMinted();
             isBuying[offer.buyer] = false;
             payable(offer.buyer).transfer(offer.price);
         }
@@ -85,6 +89,10 @@ contract FluffySaleEscrow is AccessControl, IFluffySaleEscrow {
     function buy(address offerId) external payable {
         Offer storage offer = offers[offerId];
         if(isBuying[msg.sender]) revert CanOnlyBuyOnce();
+        if(
+            address(fluffyNFT) != address(0) &&
+            IERC721(fluffyNFT).balanceOf(msg.sender) > 0
+        ) revert FluffyNFTAlreadyMinted();
         if(offer.seller == address(0)) revert NonExistingOffer();
         if(offer.buyer != address(0)) revert OfferAlreadyFilled();
         if(msg.value != offer.price) revert IncorrectPayment();
