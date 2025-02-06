@@ -1,0 +1,9 @@
+ConstructorTest
+├── when admin is zero
+│   └── it should revert
+├── when feeReceiver is zero
+│   └── it should revert
+└── when constructor params are correct
+    ├── it should grant the correct roles
+    ├── it should set the feeReceiver
+    └── it should set the feePercentage to 10 percent

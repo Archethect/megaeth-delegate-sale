@@ -1,0 +1,11 @@
+RevertOfferTest
+├── when the sender is not the sell offer creator
+│   └── it should revert
+├── when the offer already was handled succesfully
+│   └── it should revert
+└── when the sender can revert the offer
+    ├── given there is a buyer
+    │   └── it deletes the offer
+    │   └── it refunds the buyer
+    └── given there is no buyer
+        └── it deletes the offer

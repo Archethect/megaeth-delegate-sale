@@ -23,6 +23,7 @@ interface IFluffySaleEscrow {
     error TransferFailed();
     error FluffyNFTNotYetMinted();
     error CanOnlyBuyOnce();
+    error UserIsAlreadyBuying();
 
 
     event OfferCreated(address indexed seller, uint256 price);

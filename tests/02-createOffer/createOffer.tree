@@ -1,0 +1,7 @@
+CreateOfferTest
+├── when the seller is already buying
+│   └── it should revert
+├── when the seller tries to sell a second time
+│   └── it should revert
+└── when the seller is allowed to sell
+    └── it creates an offer

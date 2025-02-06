@@ -1,0 +1,7 @@
+SetFluffyTest
+├── when the sender is not an admin
+│   └── it will revert
+├── when the address is 0
+│   └── it will revert
+└── when the setting was successful
+    └── it updates the fluffy address

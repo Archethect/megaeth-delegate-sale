@@ -1,0 +1,13 @@
+RevertBuyTest
+├── when the fluffy nft is not set
+│   └── it will revert
+├── when the sender is not the buyer
+│   └── it will revert
+├── when the offer was already handled successfully
+│   └── it will revert
+├── when the buyer has a fluffy NFT already
+│   └── it will revert
+└── when the buy was reverted successfully
+    ├── it will mark the buyer as not buying
+    ├── it will set the buyer of the offer to 0
+    └── it will refund the buyer

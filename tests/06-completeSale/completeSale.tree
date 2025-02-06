@@ -1,0 +1,11 @@
+CompleteSaleTest
+├── when the fluffy nft is not set
+│   └── it will revert
+├── when the offer was already handled successfully
+│   └── it will revert
+├── when the buyer has no fluffy NFT yet
+│   └── it will revert
+└── when the sale was completed successfully
+    ├── it will mark the offer as successful
+    ├── it will pay the seller the price minus the fee
+    └── it will pay the fee to the feeReceiver

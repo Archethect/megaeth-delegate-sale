@@ -1,0 +1,12 @@
+BuyTest
+├── when the buyer is already a buyer
+│   └── it should revert
+├── when the offer does not exist
+│   └── it should revert
+├── when there is already a buyer for the offer
+│   └── it should revert
+├── when the paid value is not the same as the price
+│   └── it should revert
+└── when the buyer can buy
+    └── it marks the offer as bought
+    └── it marks the buyer as a buyer

@@ -11,7 +11,7 @@ contract Deploy is Script {
         //We use a keystore here
         address deployer = msg.sender;
         vm.startBroadcast(deployer);
-        new FluffySaleEscrow(deployer, deployer);
+       // new FluffySaleEscrow(deployer, deployer);
         new MockERC721();
         vm.stopBroadcast();
     }

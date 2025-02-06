@@ -28,6 +28,7 @@ contract FluffySaleEscrow is AccessControl, IFluffySaleEscrow {
     }
 
     function createOffer(uint256 price) external {
+        if(isBuying[msg.sender]) revert UserIsAlreadyBuying();
         if(offers[msg.sender].seller != address(0)) revert OfferAlreadyExists();
         offers[msg.sender] = Offer({
             seller: msg.sender,
@@ -68,8 +69,9 @@ contract FluffySaleEscrow is AccessControl, IFluffySaleEscrow {
         if(offer.success) revert OfferAlreadyCompleted();
         if(IERC721(fluffyNFT).balanceOf(offer.buyer) > 0) revert FluffyNFTAlreadyMinted();
         isBuying[offer.buyer] = false;
+        address buyer = offer.buyer;
         offer.buyer = address(0);
-        (bool success,) = payable(offer.buyer).call{value: offer.price}("");
+        (bool success,) = payable(buyer).call{value: offer.price}("");
         if(!success) revert TransferFailed();
         emit BuyReverted(offerId, msg.sender);
     }
