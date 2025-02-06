@@ -1,205 +1,98 @@
-# Foundry Template [![Open in Gitpod][gitpod-badge]][gitpod] [![Github Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
+# FluffySaleEscrow
 
-[gitpod]: https://gitpod.io/#https://github.com/Archethect/megaeth-delegate-sale
-[gitpod-badge]: https://img.shields.io/badge/Gitpod-Open%20in%20Gitpod-FFB45B?logo=gitpod
-[gha]: https://github.com/Archethect/megaeth-delegate-sale/actions
-[gha-badge]: https://github.com/Archethect/megaeth-delegate-sale/actions/workflows/ci.yml/badge.svg
-[foundry]: https://getfoundry.sh/
-[foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
-[license]: https://opensource.org/licenses/MIT
-[license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
+A smart contract system that facilitates secure sales of Fluffy NFT whitelists via an escrow mechanism.
 
-A Foundry-based template for developing Solidity smart contracts, with sensible defaults.
+## Overview
 
-## What's Inside
+- **Escrow Contract**: The core `FluffySaleEscrow` contract holds buyers’ Ether in escrow until the NFT is confirmed minted to them.
+- **Offer-Centric**: Each seller (address) can create exactly one offer. Buyers can pay to “buy” the offer, with funds held until final completion.
+- **Admin Controls**: An admin can set the address of the Fluffy NFT contract and manage certain configuration parameters like fees.
 
-- [Forge](https://github.com/foundry-rs/foundry/blob/master/forge): compile, test, fuzz, format, and deploy smart
-  contracts
-- [Bun]: Foundry defaults to git submodules, but this template uses Node.js packages for managing dependencies
-- [Forge Std](https://github.com/foundry-rs/forge-std): collection of helpful contracts and utilities for testing
-- [Prettier](https://github.com/prettier/prettier): code formatter for non-Solidity files
-- [Solhint](https://github.com/protofire/solhint): linter for Solidity code
+## Purpose
 
-## Getting Started
+1. **Secure Payment Holding**
+  - Ether from a buyer is locked in the contract upon purchase.
+  - If the buyer fails or decides not to mint/receive the NFT, the buyer can revert the buy and be refunded.
 
-Click the [`Use this template`](https://github.com/PaulRBerg/foundry-template/generate) button at the top of the page to
-create a new repository with this repo as the initial state.
+2. **Easy Offer Lifecycle**
+  - Sellers can create an offer with a defined price.
+  - Buyers buy the offer by sending the exact payment.
+  - The seller can revert the offer if it’s not yet completed.
 
-Or, if you prefer to install the template manually:
+3. **Fee Mechanism**
+  - A configurable fee (in basis points) is deducted from the sale price and sent to a fee receiver upon final sale.
+  - The remainder goes to the seller.
 
-```sh
-$ forge init --template PaulRBerg/foundry-template my-project
-$ cd my-project
-$ bun install # install Solhint, Prettier, and other Node.js deps
-```
+4. **Completion upon NFT Mint**
+  - The sale is only completed after the buyer actually has the Fluffy NFT.
+  - At completion, the contract releases funds to the seller and fee to the fee receiver.
 
-If this is your first time with Foundry, check out the
-[installation](https://github.com/foundry-rs/foundry#installation) instructions.
+## Key Contracts & Files
 
-## Features
+- **`IFluffySaleEscrow.sol`**
+  - The interface that defines the `Offer` struct, events, errors, and function signatures for the escrow contract.
 
-This template builds upon the frameworks and libraries mentioned above, so please consult their respective documentation
-for details about their specific features.
+- **`FluffySaleEscrow.sol`**
+  - The main escrow contract that implements the `IFluffySaleEscrow` interface and uses OpenZeppelin’s `AccessControl`.
+  - Contains all core logic for creating offers, buying, reverting buys, and completing the sale.
 
-For example, if you're interested in exploring Foundry in more detail, you should look at the
-[Foundry Book](https://book.getfoundry.sh). In particular, you may be interested in reading the
-[Writing Tests](https://book.getfoundry.sh/forge/writing-tests.html) tutorial.
+## How It Works
 
-### Sensible Defaults
+1. **Seller Creates an Offer**
+  - Calls `createOffer(price)` to set a price in wei.
+  - Stores offer data (seller address, price, `success = false`).
 
-This template comes with a set of sensible default configurations for you to use. These defaults can be found in the
-following files:
+2. **Buyer Purchases the Offer**
+  - Calls `buy(offerId)` and sends `msg.value` equal to the offer’s price.
+  - The Ether is held in escrow.
 
-```text
-├── .editorconfig
-├── .gitignore
-├── .prettierignore
-├── .prettierrc.yml
-├── .solhint.json
-├── foundry.toml
-└── remappings.txt
-```
+3. **Revert Purchase (Buyer)**
+  - If the buyer has not minted/received the Fluffy NFT, they can revert.
+  - Ether is refunded to the buyer, and the offer is reopened for new buyers.
 
-### VSCode Integration
+4. **Complete the Sale**
+  - Once the buyer has the Fluffy NFT (verified on-chain via `IERC721.balanceOf`), anyone can call `completeSale(offerId)`.
+  - The contract pays out the sale amount minus fee to the seller and sends the fee portion to the feeReceiver.
+  - The offer’s `success` status is updated, preventing further modifications.
 
-This template is IDE agnostic, but for the best user experience, you may want to use it in VSCode alongside Nomic
-Foundation's [Solidity extension](https://marketplace.visualstudio.com/items?itemName=NomicFoundation.hardhat-solidity).
+## Roles & Permissions
 
-For guidance on how to integrate a Foundry project in VSCode, please refer to this
-[guide](https://book.getfoundry.sh/config/vscode).
+- **`ADMIN_ROLE`**
+  - Granted to a designated address in the constructor.
+  - Can call `setFluffyNFT(_fluffyNFT)` to configure the NFT contract address.
+  - Controls certain aspects like fee updates in future versions (not shown in this minimal example).
 
-### GitHub Actions
+## Error Handling
 
-This template comes with GitHub Actions pre-configured. Your contracts will be linted and tested on every push and pull
-request made to the `main` branch.
+The contract reverts with custom errors when something unexpected or disallowed occurs, such as:
 
-You can edit the CI script in [.github/workflows/ci.yml](./.github/workflows/ci.yml).
+- **`InvalidAddress`**: Thrown when zero address is provided for an admin, fee receiver, or NFT contract.
+- **`UserIsAlreadyBuying`**: Thrown if a user attempts to create an offer while already buying.
+- **`OfferAlreadyExists`** / **`NonExistingOffer`**: Thrown when trying to create or buy a non-existent or repeated offer.
+- **...** (See full list in the code for more details).
 
-## Installing Dependencies
+## Events
 
-Foundry typically uses git submodules to manage dependencies, but this template uses Node.js packages because
-[submodules don't scale](https://twitter.com/PaulRBerg/status/1736695487057531328).
+- **`OfferCreated`**: Emitted when a seller creates a new offer.
+- **`OfferReverted`**: Emitted when a seller cancels their offer.
+- **`Bought`**: Emitted when a buyer pays into an offer.
+- **`BuyReverted`**: Emitted when a buyer reverts their purchase.
+- **`SaleCompleted`**: Emitted when the sale is finalized and funds are disbursed.
 
-This is how to install dependencies:
+## Local Development
 
-1. Install the dependency using your preferred package manager, e.g. `bun install dependency-name`
-   - Use this syntax to install from GitHub: `bun install github:username/repo-name`
-2. Add a remapping for the dependency in [remappings.txt](./remappings.txt), e.g.
-   `dependency-name=node_modules/dependency-name`
+1. **Clone** the repo and navigate to it.
+2. **Install** dependencies (e.g., Hardhat, Foundry, or other tool of your choice).
+3. **Compile** the contracts using your preferred development environment.
+4. **Deploy** the `FluffySaleEscrow` contract to a local or test network.
+5. **Test** the functions by creating offers, buying, reverting, and finalizing.
 
-Note that OpenZeppelin Contracts is pre-installed, so you can follow that as an example.
+## Contributing
 
-## Writing Tests
-
-To write a new test contract, you start by importing `Test` from `forge-std`, and then you inherit it in your test
-contract. Forge Std comes with a pre-instantiated [cheatcodes](https://book.getfoundry.sh/cheatcodes/) environment
-accessible via the `vm` property. If you would like to view the logs in the terminal output, you can add the `-vvv` flag
-and use [console.log](https://book.getfoundry.sh/faq?highlight=console.log#how-do-i-use-consolelog).
-
-This template comes with an example test contract [Foo.t.sol](./tests/Foo.t.sol)
-
-## Usage
-
-This is a list of the most frequently needed commands.
-
-### Build
-
-Build the contracts:
-
-```sh
-$ forge build
-```
-
-### Clean
-
-Delete the build artifacts and cache directories:
-
-```sh
-$ forge clean
-```
-
-### Compile
-
-Compile the contracts:
-
-```sh
-$ forge build
-```
-
-### Coverage
-
-Get a test coverage report:
-
-```sh
-$ forge coverage
-```
-
-### Deploy
-
-Deploy to Anvil:
-
-```sh
-$ forge script script/Deploy.s.sol --broadcast --fork-url http://localhost:8545
-```
-
-For this script to work, you need to have a `MNEMONIC` environment variable set to a valid
-[BIP39 mnemonic](https://iancoleman.io/bip39/).
-
-For instructions on how to deploy to a testnet or mainnet, check out the
-[Solidity Scripting](https://book.getfoundry.sh/tutorials/solidity-scripting.html) tutorial.
-
-### Format
-
-Format the contracts:
-
-```sh
-$ forge fmt
-```
-
-### Gas Usage
-
-Get a gas report:
-
-```sh
-$ forge test --gas-report
-```
-
-### Lint
-
-Lint the contracts:
-
-```sh
-$ bun run lint
-```
-
-### Test
-
-Run the tests:
-
-```sh
-$ forge test
-```
-
-Generate test coverage and output result to the terminal:
-
-```sh
-$ bun run test:coverage
-```
-
-Generate test coverage with lcov report (you'll have to open the `./coverage/index.html` file in your browser, to do so
-simply copy paste the path):
-
-```sh
-$ bun run test:coverage:report
-```
-
-## Related Efforts
-
-- [foundry-rs/forge-template](https://github.com/foundry-rs/forge-template)
-- [abigger87/femplate](https://github.com/abigger87/femplate)
-- [cleanunicorn/ethereum-smartcontract-template](https://github.com/cleanunicorn/ethereum-smartcontract-template)
-- [FrankieIsLost/forge-template](https://github.com/FrankieIsLost/forge-template)
+1. Fork the repository.
+2. Create a new feature branch.
+3. Submit a pull request describing your changes.
 
 ## License
 
-This project is licensed under MIT.
+This project is licensed under the [MIT License](LICENSE).
