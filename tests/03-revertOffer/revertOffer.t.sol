@@ -58,15 +58,34 @@ contract RevertOfferTest is BaseTest {
         _;
     }
 
-    function testFuzz_GivenThereIsABuyer(address seller, address buyer, uint256 price) external whenTheSenderCanRevertTheOffer(seller, buyer, price, true) {
-        price = fluffySaleEscrow.getOffer(seller).price;
+    modifier givenThereIsABuyer(address seller, address buyer) {
+        uint256 price = fluffySaleEscrow.getOffer(seller).price;
         vm.deal(buyer, price);
         _buyOffer(seller, buyer, price);
+        _;
+    }
+
+    function test_RevertWhen_TheBuyerHasAlreadyMinted(address seller, address buyer, uint256 price) external whenTheSenderCanRevertTheOffer(seller, buyer, price, true) givenThereIsABuyer(seller, buyer) {
+        IFluffySaleEscrow.Offer memory offer = fluffySaleEscrow.getOffer(seller);
+        price = offer.price;
+        buyer = offer.buyer;
+        _setNFT();
+        _mintNFT(buyer);
+
+        // it should revert
+        vm.expectRevert(abi.encodeWithSelector(IFluffySaleEscrow.FluffyNFTAlreadyMinted.selector));
+        vm.prank(seller);
+        fluffySaleEscrow.revertOffer();
+    }
+
+    function test_WhenTheBuyerHasNotMinted(address seller, address buyer, uint256 price) external whenTheSenderCanRevertTheOffer(seller, buyer, price, true) givenThereIsABuyer(seller, buyer) {
+
+        IFluffySaleEscrow.Offer memory offer = fluffySaleEscrow.getOffer(seller);
+        price = offer.price;
 
         assertEq(address(fluffySaleEscrow).balance, price, 'the contract balance should be equal to the price');
         uint256 buyerBalanceBefore = address(buyer).balance;
 
-        IFluffySaleEscrow.Offer memory offer = fluffySaleEscrow.getOffer(seller);
         assertEq(offer.seller, seller, 'seller should be set correctly');
         assertEq(offer.buyer, buyer, 'buyer should be set correctly');
         assertEq(offer.price, price, 'price should be set correctly');
@@ -104,3 +123,4 @@ contract RevertOfferTest is BaseTest {
         assertEq(offer.success, false, 'success should be set to false');
     }
 }
+

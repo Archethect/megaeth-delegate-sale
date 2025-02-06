@@ -1,6 +1,8 @@
 BuyTest
 ├── when the buyer is already a buyer
 │   └── it should revert
+├── when the buyer has already minted
+│   └── it should revert
 ├── when the offer does not exist
 │   └── it should revert
 ├── when there is already a buyer for the offer

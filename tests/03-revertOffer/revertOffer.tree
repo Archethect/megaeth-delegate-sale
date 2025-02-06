@@ -5,7 +5,10 @@ RevertOfferTest
 │   └── it should revert
 └── when the sender can revert the offer
     ├── given there is a buyer
-    │   └── it deletes the offer
-    │   └── it refunds the buyer
+    │   ├── when the buyer has already minted
+    │   │   └── it should revert
+    │   └── when the buyer has not minted
+    │       └── it deletes the offer
+    │       └── it refunds the buyer
     └── given there is no buyer
         └── it deletes the offer

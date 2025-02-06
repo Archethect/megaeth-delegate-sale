@@ -25,6 +25,23 @@ contract BuyTest is BaseTest {
         fluffySaleEscrow.buy(seller2);
     }
 
+    function testFuzz_RevertWhen_TheBuyerHasAlreadyMinted(address seller, address buyer, uint256 price) external {
+        vm.assume(seller != address(0));
+        vm.assume(buyer != address(0));
+        assumePayable(seller);
+        assumePayable(buyer);
+
+        _createOffer(seller, price);
+        _setNFT();
+        _mintNFT(buyer);
+
+        // it should revert
+        vm.deal(buyer, price);
+        vm.expectRevert(abi.encodeWithSelector(IFluffySaleEscrow.FluffyNFTAlreadyMinted.selector));
+        vm.prank(buyer);
+        fluffySaleEscrow.buy(seller);
+    }
+
     function testFuzz_RevertWhen_TheOfferDoesNotExist(address buyer, address offerId) external {
         vm.assume(buyer != address(0));
         assumePayable(buyer);
